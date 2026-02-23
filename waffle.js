@@ -1,22 +1,36 @@
 class Waffle {
-	constructor(x, y, size, speed, animations) {
-		this.name = random().toString(36).substring(2, 7);
+	constructor(
+		name,
+		x,
+		y,
+		size,
+		speed,
+		energy,
+		exploration,
+		aggressivity,
+		friendliness,
+		animations,
+	) {
+		this.name = name;
 		this.x = x;
 		this.y = y;
 		this.size = size;
 
 		this.directionX = random(-1, 1);
 		this.directionY = random(-1, 1);
+		this.stop = false;
+		this.surroundings = [];
 		this.speed = speed;
-		this.energy = 100;
-		this.exploration = randomGaussian(5, 1);
-		this.aggressivity = randomGaussian(50, 1);
+		this.energy = energy; // between 0 and 200
+		this.exploration = exploration; // between 0 and 10
+		this.aggressivity = aggressivity; // between 0 and 100
+		this.friendliness = friendliness; // between -5 and 5
 
 		this.speech = { message: "", timer: 0 };
 		this.inbox = [];
 		this.awaitingResponse = []; // Waffles that you send message to but go no response from
-		this.friendsList = [];
-		this.enemyList = [];
+
+		this.relationships = [];
 
 		this.animations = animations;
 		this.tomb = "";
@@ -32,21 +46,29 @@ class Waffle {
 
 	render(world) {
 		// if dead
-		if (this.speed <= 0) {
-			image(this.tomb, this.x, this.y, 32, 40);
+
+		if (this.speed <= 0 && this.energy <= 0) {
+			//image(this.tomb, this.x, this.y, 32, 40);
+			this.stop = true;
+			this.display();
+			this.speech = { message: "HELP", timer: 1 };
+			this.speak();
+			this.surroundings = world;
+			const currField = this.surroundings[0];
+			currField.waffleList.push(this);
+
 			return 0;
 		}
 
-		this.display();
+		// regain speed or apply fatigue
+		this.speed += 0.01 * (this.energy / 100) - 0.001;
 
 		// limit waffle speed
-		this.speed = min(2, this.speed);
+		this.speed = min(3, this.speed);
 		this.speed = max(0, this.speed);
 
-		// apply fatigue
-		if (this.energy == 0) {
-			this.speed -= 0.001;
-		}
+		this.display();
+		this.stop = false;
 
 		this.bonjour(world);
 
@@ -60,9 +82,11 @@ class Waffle {
 		} else {
 			dir = this.directionY > 0 ? "down" : "up";
 		}
+
+		const frame = this.stop ? 1 : frameCount % 3;
 		imageMode(CENTER);
 		image(
-			this.animations[dir][frameCount % 3],
+			this.animations[dir][frame],
 			this.x,
 			this.y,
 			this.size,
@@ -71,7 +95,15 @@ class Waffle {
 	}
 
 	bonjour(world) {
-		world[0].waffleList.push(this); // update current field to say it contains this waffle
+		if (this.name == 52) console.log(this.speed);
+		this.surroundings = world;
+		const currField = this.surroundings[0];
+		currField.waffleList.push(this); // update current field to say it contains this waffle
+
+		if (currField.hasCrop) {
+			this.consume(currField);
+		}
+
 		this.checkInbox();
 
 		// say what you have to say
@@ -90,7 +122,7 @@ class Waffle {
 		for (let mail of this.inbox) {
 			if (mail.isResponse) {
 				this.awaitingResponse = this.awaitingResponse.filter(
-					(r) => mail.sender.name != r,
+					(r) => mail.sender != r,
 				);
 			} else {
 				this.communicate(mail.sender, true);
@@ -100,13 +132,15 @@ class Waffle {
 	}
 
 	move() {
+		if (this.stop) return;
 		let direction = createVector(this.directionX, this.directionY);
 		direction.setMag(1);
-		let minLimit = this.size / 2;
-		let maxLimit = 600 - this.size / 2;
+		let minLimit = this.size / 2; // 30
+		let maxLimit = 600 - this.size / 2; //585
 
 		let xMovement = this.x + direction.x * this.speed;
 		let yMovement = this.y + direction.y * this.speed;
+		console.log(xMovement, yMovement);
 
 		if (xMovement > minLimit && xMovement < maxLimit) {
 			this.x = xMovement;
@@ -155,81 +189,132 @@ class Waffle {
 		}
 	}
 
-	think(fieldsArray) {
-		// If another waffle is on this field, do something. Important: only one waffle (one who came later) will initiate to the other
-		let currField = fieldsArray[0];
+	think() {
+		// If another waffle is on this field, communicate. Important: Waffle who came later will initiate
+		let currField = this.surroundings[0];
 
 		let otherWaffles = currField.waffleList.filter(
 			(w) => w.name != this.name,
 		);
 
 		for (let otherWaffle of otherWaffles) {
-			if (this.awaitingResponse.includes(otherWaffle.name))
-				continue;
-
+			if (this.awaitingResponse.includes(otherWaffle)) continue;
 			this.communicate(otherWaffle);
 		}
 
-		// If crop nearby, go get it !
-		for (let field of fieldsArray) {
+		if (this.stop) return;
+
+		// scanning
+		for (let field of this.surroundings) {
+			// if someone needs help, go help
+			let waffleList = field.waffleList.filter(
+				(w) => w.name != this.name,
+			);
+			for (let waffle of waffleList) {
+				let waffleRelationship = this.findFriendship(waffle);
+				if (waffleRelationship && waffle.speed <= 0) {
+					waffleRelationship.feelings > 0
+						? this.help(waffle, 500)
+						: "";
+				}
+			}
+			// If crop nearby, go get it !
 			if (field.hasCrop) {
 				// find field and go toward it
 				let fieldCenterX = field.x + field.size / 2;
 				let fieldCenterY = field.y + field.size / 2;
-				let cropVector = createVector(
-					fieldCenterX,
-					fieldCenterY,
-				);
-				let waffleVector = createVector(this.x, this.y);
-				let direction = p5.Vector.sub(cropVector, waffleVector);
-				direction.normalize();
-				direction.mult(this.speed);
-
-				if (p5.Vector.dist(cropVector, waffleVector) < 5) {
-					this.consume(field);
-				}
-
-				this.directionX = direction.x;
-				this.directionY = direction.y;
-
+				this.goToward(fieldCenterX, fieldCenterY);
 				return;
 			}
 		}
 
 		// randomly can change directions
-		if (this.rollDice(this.exploration)) {
+		if (this.flipCoin(this.exploration)) {
 			this.changeDefaultDirection(0, 0);
 		}
 	}
 
-	rollDice(percentage) {
+	goToward(x, y) {
+		let destVector = createVector(x, y);
+		let waffleVector = createVector(this.x, this.y);
+		let direction = p5.Vector.sub(destVector, waffleVector);
+		direction.normalize();
+		direction.mult(this.speed);
+
+		this.directionX = direction.x;
+		this.directionY = direction.y;
+	}
+
+	flipCoin(percentage) {
+		//  % change of happening
 		return random(100) < percentage;
+	}
+
+	rollDice(chance) {
+		return randomGaussian(chance);
 	}
 
 	consume(field) {
 		this.energy += 500;
-		this.speed += 0.1;
 		field.deleteCrop();
 	}
 
 	communicate(otherWaffle, isResponse) {
-		if (this.friendsList.includes(otherWaffle)) {
-			this.sendMessage(otherWaffle, "Helloooo", isResponse);
-		} else if (this.enemyList.includes(otherWaffle)) {
-			this.sendMessage(otherWaffle, "Fuck you", isResponse);
+		let relationship = this.findFriendship(otherWaffle);
+		if (relationship) {
+			const message =
+				relationship.feelings > 0 ? "Hellooo" : "Fuck you";
+			this.sendMessage(otherWaffle, message, isResponse);
+			this.updateFriendship(otherWaffle, relationship.feelings);
 		} else {
 			this.sendMessage(otherWaffle, "Bonjour", isResponse);
 
-			this.rollDice(this.aggressivity)
-				? this.enemyList.push(otherWaffle)
-				: this.friendsList.push(otherWaffle);
+			this.updateFriendship(
+				otherWaffle,
+				this.rollDice(this.friendliness),
+			);
+		}
+	}
+
+	findFriendship(otherWaffle, display = false) {
+		return this.relationships.find(
+			(r) => r.waffle.name == otherWaffle.name,
+		);
+	}
+
+	updateFriendship(otherWaffle, feelings) {
+		const relationship = this.findFriendship(otherWaffle);
+		const idx = this.relationships.indexOf(relationship);
+		const newRelationship = { waffle: otherWaffle, feelings };
+
+		if (relationship) {
+			this.relationships[idx] = newRelationship;
+		} else {
+			this.relationships.push(newRelationship);
+		}
+	}
+
+	help(otherWaffle, ammount) {
+		if (this.energy > ammount) {
+			this.speech = { message: "Helping", timer: 10 };
+			this.speak();
+			this.energy -= ammount;
+			otherWaffle.energy += ammount;
+
+			let r = otherWaffle.findFriendship(this, true);
+
+			const feelings = r
+				? r.feelings
+				: this.rollDice(otherWaffle.friendliness);
+
+			otherWaffle.updateFriendship(this, feelings + 1);
 		}
 	}
 
 	sendMessage(destWaffle, message, isResponse = false) {
 		destWaffle.inbox.push({ sender: this, message, isResponse });
 		if (!isResponse) {
-			this.awaitingResponse.push(destWaffle.name);
+			this.awaitingResponse.push(destWaffle);
 		}
 		this.speech = { message, timer: 10 };
 	}
@@ -247,5 +332,83 @@ class Waffle {
 		text(this.speech.message, this.x - 18, this.y - 21);
 
 		this.speech.timer--;
+	}
+
+	displayInfo() {
+		fill("white");
+		stroke(0);
+		strokeWeight(2);
+		let sizeX = 100;
+		let sizeY = 200;
+		let factorX = this.x < 200 ? 0 : 1;
+		let factorY = this.y < 200 ? 0 : 1;
+		let startX = this.x - 100 * factorX;
+		let startY = this.y - 200 * factorY;
+		rect(startX, startY, sizeX, sizeY);
+
+		let paddingX = 10;
+		let paddingY = 20;
+
+		textSize(10);
+		textFont(this.font);
+		fill(0);
+		noStroke();
+		text(`name: ${this.name}`, startX + paddingX, startY + paddingY);
+
+		text(
+			`X: ${this.x.toFixed(0)}, Y: ${this.y.toFixed(0)}`,
+			startX + paddingX,
+			startY + paddingY * 2,
+		);
+
+		noStroke();
+		text(
+			`speed: ${this.speed.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 3,
+		);
+
+		text(
+			`energy: ${this.energy.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 4,
+		);
+
+		text(
+			`dX: ${this.directionX.toFixed(2)}, dY: ${this.directionY.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 5,
+		);
+
+		noStroke();
+		text(
+			`aggresive: ${this.aggressivity.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 6,
+		);
+
+		noStroke();
+		text(
+			`exploration: ${this.exploration.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 7,
+		);
+
+		noStroke();
+		text(
+			`friendliness: ${this.friendliness.toFixed(2)}`,
+			startX + paddingX,
+			startY + paddingY * 8,
+		);
+	}
+
+	isMouseOver() {
+		let isOverX =
+			mouseX >= this.x - this.size / 2 &&
+			mouseX <= this.x + this.size / 2;
+		let isOverY =
+			mouseY >= this.y - this.size / 2 &&
+			mouseY <= this.y + this.size / 2;
+		return isOverX && isOverY;
 	}
 }
