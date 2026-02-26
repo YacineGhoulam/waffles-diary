@@ -51,6 +51,7 @@ async function loadAssets() {
 	tomb = await loadImage("/assets/tomb.png");
 	dialog = await loadImage("/assets/dialog.png");
 	backgroundMusic = await loadSound("/assets/blossom.wav");
+	clickSound = await loadSound("/assets/click.wav");
 	select(`#loadingButton`).hide();
 	select(`#startButton`).removeAttribute("style");
 }
@@ -246,6 +247,7 @@ function displayStartMenu() {
 // handling pause
 
 function mouseClicked() {
+	clickSound.play();
 	if (
 		mouseX > 0 &&
 		mouseX < worldWidth &&
