@@ -1,13 +1,173 @@
+@font-face {
+	font-family: minecraft;
+	src: url(/assets/Minecraft.ttf);
+}
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: #f0f0f0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	justify-content: space-around;
+	min-height: 100vh;
+	background: #fff;
+	background-image: url("/assets/keroppi.png");
+	font-family: minecraft;
+}
+
+.menu {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.menu button {
+	width: 20%;
+}
+
+.menu-text {
+	padding: 20px;
+	background-color: white;
+	letter-spacing: 2px;
+	width: 80%;
+	margin: 20px auto;
+	border-radius: 25px;
+	border-style: double;
+}
+
+.menu-text h1 {
+	margin: 20px 0;
+}
+
+.menu-text p {
+	margin: 20px 0;
+}
+
+.diary {
+	background-image: url("/assets/bg3.png");
+	width: 50%;
+	display: flex;
+	flex-direction: column;
+	border-radius: 5%;
+	margin: auto;
+	padding: 20px 0;
+	max-height: 90vh;
+	overflow: scroll;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+.diary::-webkit-scrollbar {
+	display: none;
+}
+
+.diary-header {
+	width: 80%;
+	text-align: center;
+	color: black;
+	padding: 10px;
+	padding-top: 10px;
+	padding-top: 20px;
+	margin: 30px auto;
+	background-color: white;
+	font-size: 1.5rem;
+	border-style: double;
+}
+
+.diary-body {
+	padding: 20px;
+	max-height: 20%;
+}
+
+.characters-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	gap: 0px 0px;
+}
+
+.characters {
+	display: flex;
+	padding: 20px;
+	margin: 20px 0px;
+	border-radius: 20px;
+}
+
+.characters img {
+	width: 50px;
+	margin: auto;
+}
+
+.diary-entries {
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+.diary-entry {
+	background-color: white;
+	padding: 20px;
+	margin: 30px auto;
+	border-radius: 20px;
+	border: 3px dotted black;
+	width: 80%;
+}
+
+button,
+#loadingButton {
+	color: #fff;
+	background-color: #38667f;
+	padding: 15px 20px;
+	margin: 10px;
+	font-family: minecraft;
+
+	font-size: 14px;
+	width: 20%;
+	border: 0;
+	box-shadow:
+		0px 5px black,
+		0px -5px black,
+		5px 0px black,
+		-5px 0px black,
+		0px 10px #00000038,
+		5px 5px #00000038,
+		-5px 5px #00000038,
+		inset 0px 5px #ffffff36;
+	cursor: pointer;
+}
+
+button:active {
+	transform: translateY(5px);
+	box-shadow:
+		0px 5px black,
+		0px -5px black,
+		5px 0px black,
+		-5px 0px black,
+		inset 0px 5px #00000038;
+}
+
+.characters-relationships {
+	margin-top: 20px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.characters-relationships h2 {
+	margin: 20px 0px;
+}
+
+.row {
+	display: flex;
+	margin: 10px 0;
+}
+
+.cell {
+	font-size: 14px;
+	width: 20px;
+	margin: auto 15px;
+	text-align: center;
+	font-weight: bold;
 }

@@ -3,13 +3,14 @@ class Field {
 		this.x = x;
 		this.y = y;
 		this.size = size;
-		this.hasCrop = floor(random(0, 20)) == 6;
+		this.fertility = random(0.008); // percentage of crop appearing
+		this.hasCrop = false;
 		this.waffleList = [];
 		this.bg = bg;
 		this.cropImg = cropImg;
 	}
 
-	render() {
+	render(paused) {
 		imageMode(CORNER);
 		image(this.bg, this.x, this.y, this.size, this.size);
 
@@ -25,6 +26,8 @@ class Field {
 				this.size * 0.8,
 				this.size * 0.8,
 			);
+		} else {
+			this.hasCrop = paused ? 0 : random(100) < this.fertility;
 		}
 	}
 

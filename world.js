@@ -22,46 +22,75 @@ class World {
 		}
 	}
 
-	render() {
+	render(paused) {
 		for (let row of this.fields) {
 			for (let field of row) {
-				field.render();
+				field.render(paused);
 			}
 		}
 	}
 
-	getFieldsInfo(x, y) {
+	getFieldsInfo(x, y, sight) {
 		const fieldList = [];
 		let fieldCountX = this.width / this.fieldSize;
 		let fieldCountY = this.height / this.fieldSize;
+
 		let fieldX = floor(x / this.fieldSize);
 		let fieldY = floor(y / this.fieldSize);
 
 		fieldList.push(this.fields[fieldX][fieldY]);
 		// This is hurrendous I know..
-		if (fieldX > 0) {
-			fieldList.push(this.fields[fieldX - 1][fieldY]);
+		let i = 0;
+		while (fieldX - i > 0 && i < sight) {
+			fieldList.push(this.fields[fieldX - i - 1][fieldY]);
+			i++;
 		}
-		if (fieldX < fieldCountX - 1) {
-			fieldList.push(this.fields[fieldX + 1][fieldY]);
+		i = 0;
+		while (fieldX + i < fieldCountX - 1 && i < sight) {
+			fieldList.push(this.fields[fieldX + i + 1][fieldY]);
+			i++;
 		}
-		if (fieldY > 0) {
-			fieldList.push(this.fields[fieldX][fieldY - 1]);
+		i = 0;
+		while (fieldY - i > 0 && i < sight) {
+			fieldList.push(this.fields[fieldX][fieldY - i - 1]);
+			i++;
 		}
-		if (fieldY < fieldCountY - 1) {
-			fieldList.push(this.fields[fieldX][fieldY + 1]);
+		i = 0;
+		while (fieldY + i < fieldCountY - 1 && i < sight) {
+			fieldList.push(this.fields[fieldX][fieldY + i + 1]);
+			i++;
 		}
-		if (fieldX > 0 && fieldY > 0) {
-			fieldList.push(this.fields[fieldX - 1][fieldY - 1]);
+		i = 0;
+		while (fieldX - i > 0 && fieldY - i > 0 && i < sight) {
+			fieldList.push(this.fields[fieldX - i - 1][fieldY - i - 1]);
+			i++;
 		}
-		if (fieldX < fieldCountX - 1 && fieldY < fieldCountY - 1) {
+		i = 0;
+		while (
+			fieldX + i < fieldCountX - 1 &&
+			fieldY + i < fieldCountY - 1 &&
+			i < sight
+		) {
 			fieldList.push(this.fields[fieldX + 1][fieldY + 1]);
+			i++;
 		}
-		if (fieldX > 0 && fieldY < fieldCountY - 1) {
+		i = 0;
+		while (
+			fieldX - i > 0 &&
+			fieldY + i < fieldCountY - 1 &&
+			i < sight
+		) {
 			fieldList.push(this.fields[fieldX - 1][fieldY + 1]);
+			i++;
 		}
-		if (fieldX < fieldCountX - 1 && fieldY > 0) {
+		i = 0;
+		while (
+			fieldX + i < fieldCountX - 1 &&
+			fieldY - i > 0 &&
+			i < sight
+		) {
 			fieldList.push(this.fields[fieldX + 1][fieldY - 1]);
+			i++;
 		}
 
 		return fieldList;

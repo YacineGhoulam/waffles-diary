@@ -16,5 +16,39 @@
 		<script src="world.js"></script>
 		<script src="waffle.js"></script>
 		<script src="sketch.js"></script>
+
+		<div class="diary scroller">
+			<div class="diary-header">
+				<h1 id="fuck">Waffle Party</h1>
+			</div>
+			<div class="menu">
+				<div class="menu-text">
+					<h3>Welcome to Waffle Diary.</h3>
+					<p>
+						This is a simulation of silly creatures
+						called Waffles.
+					</p>
+					<p>Waffles need food or else they can't move.</p>
+					<p>
+						Waffles can help each other by giving energy
+						points.
+					</p>
+					<p>Click on a waffles icon to see its diary.</p>
+					<p>
+						Click anywhere on the canvas to pause and
+						hover a waffle for more info.
+					</p>
+				</div>
+				<div id="loadingButton"><p>Loading...</p></div>
+				<button id="startButton" style="display: none">
+					Start
+				</button>
+			</div>
+			<div class="diary-body">
+				<div class="characters-container"></div>
+				<div class="characters-relationships"></div>
+				<div class="diary-container"></div>
+			</div>
+		</div>
 	</body>
 </html>

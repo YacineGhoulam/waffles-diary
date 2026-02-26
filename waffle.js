@@ -6,47 +6,52 @@ class Waffle {
 		size,
 		speed,
 		energy,
+		sight,
 		exploration,
 		aggressivity,
 		friendliness,
 		animations,
+		font,
+		tomb,
+		dialog,
 	) {
+		// movements
 		this.name = name;
 		this.x = x;
 		this.y = y;
 		this.size = size;
-
 		this.directionX = random(-1, 1);
 		this.directionY = random(-1, 1);
 		this.stop = false;
 		this.surroundings = [];
+
+		// traits
 		this.speed = speed;
 		this.energy = energy; // between 0 and 200
+		this.sight = sight; // between 1 and 5 how blocks far you can see
 		this.exploration = exploration; // between 0 and 10
 		this.aggressivity = aggressivity; // between 0 and 100
 		this.friendliness = friendliness; // between -5 and 5
 
+		// socials
+		this.clock = 0;
 		this.speech = { message: "", timer: 0 };
 		this.inbox = [];
 		this.awaitingResponse = []; // Waffles that you send message to but go no response from
-
 		this.relationships = [];
+		this.diary = ["Nothing to say for today..."];
 
+		// assets
 		this.animations = animations;
-		this.tomb = "";
-		this.dialog = "";
-		this.font = "";
+		this.tomb = tomb;
+		this.dialog = dialog;
+		this.font = font;
 	}
 
-	async initiate() {
-		this.font = await loadFont("/assets/Minecraft.ttf");
-		this.tomb = await loadImage("/assets/tomb.png");
-		this.dialog = await loadImage("/assets/dialog.png");
-	}
+	render(world, clock) {
+		this.clock = clock;
 
-	render(world) {
 		// if dead
-
 		if (this.speed <= 0 && this.energy <= 0) {
 			//image(this.tomb, this.x, this.y, 32, 40);
 			this.stop = true;
@@ -95,7 +100,6 @@ class Waffle {
 	}
 
 	bonjour(world) {
-		if (this.name == 52) console.log(this.speed);
 		this.surroundings = world;
 		const currField = this.surroundings[0];
 		currField.waffleList.push(this); // update current field to say it contains this waffle
@@ -124,6 +128,18 @@ class Waffle {
 				this.awaitingResponse = this.awaitingResponse.filter(
 					(r) => mail.sender != r,
 				);
+
+				let shift = 0;
+
+				if (mail.message.includes("Hello")) shift = 1;
+				else if (mail.message.includes("Fuck")) shift = -1;
+
+				shift *= random(0.5);
+				let feelings =
+					float(this.findFriendship(mail.sender).feelings) +
+					shift;
+
+				this.updateFriendship(mail.sender, feelings);
 			} else {
 				this.communicate(mail.sender, true);
 			}
@@ -140,7 +156,6 @@ class Waffle {
 
 		let xMovement = this.x + direction.x * this.speed;
 		let yMovement = this.y + direction.y * this.speed;
-		console.log(xMovement, yMovement);
 
 		if (xMovement > minLimit && xMovement < maxLimit) {
 			this.x = xMovement;
@@ -251,7 +266,7 @@ class Waffle {
 	}
 
 	rollDice(chance) {
-		return randomGaussian(chance);
+		return randomGaussian(chance).toFixed(2);
 	}
 
 	consume(field) {
@@ -261,9 +276,14 @@ class Waffle {
 
 	communicate(otherWaffle, isResponse) {
 		let relationship = this.findFriendship(otherWaffle);
+
 		if (relationship) {
+			const delta = this.clock - relationship.lastContact; // how long since they talked
+			if (delta < 10) return;
+
 			const message =
 				relationship.feelings > 0 ? "Hellooo" : "Fuck you";
+
 			this.sendMessage(otherWaffle, message, isResponse);
 			this.updateFriendship(otherWaffle, relationship.feelings);
 		} else {
@@ -276,7 +296,15 @@ class Waffle {
 		}
 	}
 
-	findFriendship(otherWaffle, display = false) {
+	sendMessage(destWaffle, message, isResponse = false) {
+		destWaffle.inbox.push({ sender: this, message, isResponse });
+		if (!isResponse) {
+			this.awaitingResponse.push(destWaffle);
+		}
+		this.speech = { message, timer: 10 };
+	}
+
+	findFriendship(otherWaffle) {
 		return this.relationships.find(
 			(r) => r.waffle.name == otherWaffle.name,
 		);
@@ -284,13 +312,28 @@ class Waffle {
 
 	updateFriendship(otherWaffle, feelings) {
 		const relationship = this.findFriendship(otherWaffle);
-		const idx = this.relationships.indexOf(relationship);
-		const newRelationship = { waffle: otherWaffle, feelings };
+		const newRelationship = {
+			waffle: otherWaffle,
+			feelings: float(feelings).toFixed(2),
+			lastContact: this.clock,
+		};
+		let feel = newRelationship.feelings > 0 ? "like" : "hate";
 
 		if (relationship) {
+			let delta = this.clock - relationship.lastContact; // how long since it updated
+			if (delta < 10) return;
+
+			const idx = this.relationships.indexOf(relationship);
 			this.relationships[idx] = newRelationship;
+
+			this.diary.push(
+				`Today I met ${otherWaffle.name} again and I ${feel}s a bit more ! (${newRelationship.feelings})`,
+			);
 		} else {
 			this.relationships.push(newRelationship);
+			this.diary.push(
+				`Today I met ${otherWaffle.name} for the first time and I ${feel}d them ! (${newRelationship.feelings})`,
+			);
 		}
 	}
 
@@ -301,22 +344,15 @@ class Waffle {
 			this.energy -= ammount;
 			otherWaffle.energy += ammount;
 
-			let r = otherWaffle.findFriendship(this, true);
+			let r = otherWaffle.findFriendship(this);
 
 			const feelings = r
 				? r.feelings
 				: this.rollDice(otherWaffle.friendliness);
 
-			otherWaffle.updateFriendship(this, feelings + 1);
+			otherWaffle.updateFriendship(this, int(feelings) + 5);
+			this.diary.push(`Today I helped ${otherWaffle.name} !`);
 		}
-	}
-
-	sendMessage(destWaffle, message, isResponse = false) {
-		destWaffle.inbox.push({ sender: this, message, isResponse });
-		if (!isResponse) {
-			this.awaitingResponse.push(destWaffle);
-		}
-		this.speech = { message, timer: 10 };
 	}
 
 	speak() {
@@ -326,10 +362,11 @@ class Waffle {
 		ellipse(this.x, this.y - 25, 50, 25);
 
 		textSize(10);
+		textAlign(CENTER);
 		textFont(this.font);
 		fill(0);
 		noStroke();
-		text(this.speech.message, this.x - 18, this.y - 21);
+		text(this.speech.message, this.x, this.y - 21);
 
 		this.speech.timer--;
 	}
@@ -345,6 +382,8 @@ class Waffle {
 		let startX = this.x - 100 * factorX;
 		let startY = this.y - 200 * factorY;
 		rect(startX, startY, sizeX, sizeY);
+
+		textAlign(LEFT);
 
 		let paddingX = 10;
 		let paddingY = 20;
@@ -382,7 +421,7 @@ class Waffle {
 
 		noStroke();
 		text(
-			`aggresive: ${this.aggressivity.toFixed(2)}`,
+			`sight: ${this.sight.toFixed(2)}`,
 			startX + paddingX,
 			startY + paddingY * 6,
 		);
