@@ -47,11 +47,11 @@ async function loadSprite() {
 
 async function loadAssets() {
 	await loadSprite();
-	font = await loadFont("/assets/Minecraft.ttf");
-	tomb = await loadImage("/assets/tomb.png");
-	dialog = await loadImage("/assets/dialog.png");
-	backgroundMusic = await loadSound("/assets/blossom.wav");
-	clickSound = await loadSound("/assets/click.wav");
+	font = await loadFont("assets/Minecraft.ttf");
+	tomb = await loadImage("assets/tomb.png");
+	dialog = await loadImage("assets/dialog.png");
+	backgroundMusic = await loadSound("assets/blossom.wav");
+	clickSound = await loadSound("assets/click.wav");
 	select(`#loadingButton`).hide();
 	select(`#startButton`).removeAttribute("style");
 }
@@ -64,7 +64,7 @@ function initiateCharactersView() {
 		let char = createDiv();
 		char.class("characters");
 		let image = createImg(
-			`./assets/fronts/player${(waffle.name % waffleAssetsCount) + 1}_front.png`,
+			`assets/fronts/player${(waffle.name % waffleAssetsCount) + 1}_front.png`,
 			waffle.name,
 		);
 		image.id(waffle.name);
@@ -92,7 +92,7 @@ function drawRelationshipMatrix() {
 			img = createP("");
 		} else {
 			img = createImg(
-				`./assets/fronts/player${(id % waffleAssetsCount) + 1}_front.png`,
+				`assets/fronts/player${(id % waffleAssetsCount) + 1}_front.png`,
 				id,
 			);
 		}
@@ -108,7 +108,7 @@ function drawRelationshipMatrix() {
 		let row = createDiv();
 		row.class("row");
 		let image = createImg(
-			`./assets/fronts/player${(waffle.name % waffleAssetsCount) + 1}_front.png`,
+			`assets/fronts/player${(waffle.name % waffleAssetsCount) + 1}_front.png`,
 			waffle.name,
 		);
 		image.class("cell");

@@ -7,8 +7,8 @@ class World {
 	}
 
 	async initiate() {
-		let bg = await loadImage("/assets/grass.png");
-		let cropImage = await loadImage("/assets/waffle.png");
+		let bg = await loadImage("assets/grass.png");
+		let cropImage = await loadImage("assets/waffle.png");
 
 		const fs = this.fieldSize;
 

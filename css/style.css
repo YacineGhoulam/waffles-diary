@@ -1,6 +1,6 @@
 @font-face {
 	font-family: minecraft;
-	src: url(/assets/Minecraft.ttf);
+	src: url(assets/Minecraft.ttf);
 }
 * {
 	margin: 0;
@@ -15,7 +15,7 @@ body {
 	justify-content: space-around;
 	min-height: 100vh;
 	background: #fff;
-	background-image: url("/assets/keroppi.png");
+	background-image: url("assets/keroppi.png");
 	font-family: minecraft;
 }
 
@@ -48,7 +48,7 @@ body {
 }
 
 .diary {
-	background-image: url("/assets/bg3.png");
+	background-image: url("assets/bg3.png");
 	width: 50%;
 	display: flex;
 	flex-direction: column;
